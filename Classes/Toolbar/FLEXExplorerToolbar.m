@@ -1,6 +1,6 @@
 //
 //  FLEXExplorerToolbar.m
-//  Flipboard
+//  FLEX
 //
 //  Created by Ryan Olson on 4/4/14.
 //  Copyright (c) 2020 FLEX Team. All rights reserved.
@@ -12,14 +12,12 @@
 #import "FLEXResources.h"
 #import "FLEXUtility.h"
 
-// Workaround for Xcode < 26, because I don't like Xcode 26 :)
 #if !__has_include(<UIKit/UIGlassEffect.h>)
 @interface UIGlassEffect : UIVisualEffect @end
 @implementation UIGlassEffect @end
 #endif
 
 @interface FLEXExplorerToolbar ()
-
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *globalsItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *hierarchyItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *selectItem;
@@ -28,18 +26,14 @@
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *colorItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *closeItem;
 @property (nonatomic, readwrite) UIView *dragHandle;
-
 @property (nonatomic) UIImageView *dragHandleImageView;
-
 @property (nonatomic) UIView *selectedViewDescriptionContainer;
 @property (nonatomic) UIView *selectedViewDescriptionSafeAreaContainer;
 @property (nonatomic) UIView *selectedViewColorIndicator;
 @property (nonatomic) UILabel *selectedViewDescriptionLabel;
-
 @property (nonatomic, readwrite) UIView *backgroundView;
 @property (nonatomic) UIVisualEffectView *backgroundGlassView API_AVAILABLE(ios(26.0));
 @property (nonatomic) UIVisualEffectView *descriptionGlassView API_AVAILABLE(ios(26.0));
-
 @end
 
 @implementation FLEXExplorerToolbar
@@ -47,7 +41,6 @@
 - (id)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        // Background
         if (@available(iOS 26, *)) {
             UIGlassEffect *glassEffect = [[UIGlassEffect alloc] init];
             self.backgroundGlassView = [[UIVisualEffectView alloc] initWithEffect:glassEffect];
@@ -61,15 +54,13 @@
             [self addSubview:self.backgroundView];
         }
 
-        // Drag handle
         self.dragHandle = [UIView new];
         self.dragHandle.backgroundColor = UIColor.clearColor;
         self.dragHandleImageView = [[UIImageView alloc] initWithImage:FLEXResources.dragHandle];
         self.dragHandleImageView.tintColor = [FLEXColor.iconColor colorWithAlphaComponent:0.666];
         [self.dragHandle addSubview:self.dragHandleImageView];
         [self addSubview:self.dragHandle];
-        
-        // Buttons
+
         if (@available(iOS 26, *)) {
             UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
             self.globalsItem   = [FLEXExplorerToolbarItem itemWithTitle:@"menu" image:[UIImage systemImageNamed:@"wrench.fill" withConfiguration:config]];
@@ -89,7 +80,6 @@
             self.closeItem     = [FLEXExplorerToolbarItem itemWithTitle:@"close" image:FLEXResources.closeIcon];
         }
 
-        // Selected view box //
         if (@available(iOS 26, *)) {
             UIGlassEffect *descGlassEffect = [[UIGlassEffect alloc] init];
             self.descriptionGlassView = [[UIVisualEffectView alloc] initWithEffect:descGlassEffect];
@@ -112,31 +102,25 @@
         } else {
             [self.selectedViewDescriptionContainer addSubview:self.selectedViewDescriptionSafeAreaContainer];
         }
-        
         self.selectedViewColorIndicator = [UIView new];
         self.selectedViewColorIndicator.backgroundColor = UIColor.redColor;
         [self.selectedViewDescriptionSafeAreaContainer addSubview:self.selectedViewColorIndicator];
-        
         self.selectedViewDescriptionLabel = [UILabel new];
         self.selectedViewDescriptionLabel.backgroundColor = UIColor.clearColor;
         self.selectedViewDescriptionLabel.font = [[self class] descriptionLabelFont];
         [self.selectedViewDescriptionSafeAreaContainer addSubview:self.selectedViewDescriptionLabel];
-        
-        self.toolbarItems = @[_globalsItem, _hierarchyItem, _selectItem, _moveItem, _colorItem, _closeItem];
-    }
 
+        self.toolbarItems = @[_globalsItem, _hierarchyItem, _selectItem, _moveItem, _recentItem, _colorItem, _closeItem];
+    }
     return self;
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-
     CGRect safeArea = [self safeArea];
     const CGFloat kToolbarItemHeight = [[self class] toolbarItemHeight];
     CGFloat topPadding = 0;
-    if (@available(iOS 26, *)) {
-        topPadding = [[self class] glassVerticalPadding];
-    }
+    if (@available(iOS 26, *)) topPadding = [[self class] glassVerticalPadding];
 
     self.dragHandle.frame = CGRectMake(CGRectGetMinX(safeArea), CGRectGetMinY(safeArea) + topPadding, [[self class] dragHandleWidth], kToolbarItemHeight);
     CGRect dragHandleImageFrame = self.dragHandleImageView.frame;
@@ -147,47 +131,41 @@
     CGFloat originX = CGRectGetMaxX(self.dragHandle.frame);
     CGFloat originY = CGRectGetMinY(safeArea) + topPadding;
     CGFloat height = kToolbarItemHeight;
-    CGFloat width = self.toolbarItems.count ? FLEXFloor((CGRectGetWidth(safeArea) - CGRectGetWidth(self.dragHandle.frame)) / self.toolbarItems.count) : 0;
+    CGFloat availableWidth = CGRectGetWidth(safeArea) - CGRectGetWidth(self.dragHandle.frame);
+    CGFloat width = self.toolbarItems.count ? FLEXFloor(availableWidth / self.toolbarItems.count) : 0;
     for (FLEXExplorerToolbarItem *toolbarItem in self.toolbarItems) {
         toolbarItem.currentItem.frame = CGRectMake(originX, originY, width, height);
         originX = CGRectGetMaxX(toolbarItem.currentItem.frame);
     }
-    
     UIView *lastToolbarItem = self.toolbarItems.lastObject.currentItem;
-    CGRect lastToolbarItemFrame = lastToolbarItem.frame;
-    CGFloat rightEdge = CGRectGetMaxX(safeArea);
-    if (@available(iOS 26, *)) {
-        const CGFloat kGlassInset = [[self class] glassHorizontalInset];
-        rightEdge = CGRectGetWidth(self.bounds) - kGlassInset;
+    if (lastToolbarItem) {
+        CGRect lastToolbarItemFrame = lastToolbarItem.frame;
+        CGFloat rightEdge = CGRectGetMaxX(safeArea);
+        if (@available(iOS 26, *)) rightEdge = CGRectGetWidth(self.bounds) - [[self class] glassHorizontalInset];
+        lastToolbarItemFrame.size.width = MAX(0, rightEdge - lastToolbarItemFrame.origin.x);
+        lastToolbarItem.frame = lastToolbarItemFrame;
     }
-    lastToolbarItemFrame.size.width = MAX(0, rightEdge - lastToolbarItemFrame.origin.x);
-    lastToolbarItem.frame = lastToolbarItemFrame;
 
     if (@available(iOS 26, *)) {
         const CGFloat kGlassInset = [[self class] glassHorizontalInset];
         const CGFloat kGlassPadding = [[self class] glassVerticalPadding];
-        self.backgroundView.frame = CGRectMake(
-            kGlassInset, 0,
-            CGRectGetWidth(self.bounds) - kGlassInset * 2, kToolbarItemHeight + kGlassPadding * 2
-        );
+        self.backgroundView.frame = CGRectMake(kGlassInset, 0, CGRectGetWidth(self.bounds) - kGlassInset * 2, kToolbarItemHeight + kGlassPadding * 2);
     } else {
         self.backgroundView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), kToolbarItemHeight);
     }
-    
+
     const CGFloat kSelectedViewColorDiameter = [[self class] selectedViewColorIndicatorDiameter];
     const CGFloat kDescriptionLabelHeight = [[self class] descriptionLabelHeight];
     const CGFloat kHorizontalPadding = [[self class] horizontalPadding];
     const CGFloat kDescriptionVerticalPadding = [[self class] descriptionVerticalPadding];
     const CGFloat kDescriptionContainerHeight = [[self class] descriptionContainerHeight];
-    
     CGRect descriptionContainerFrame = CGRectZero;
     if (@available(iOS 26, *)) {
         const CGFloat kGlassInset = [[self class] glassHorizontalInset];
-        const CGFloat kGlassGap = 2;
         descriptionContainerFrame.size.width = CGRectGetWidth(self.bounds) - kGlassInset * 2;
         descriptionContainerFrame.size.height = kDescriptionContainerHeight;
         descriptionContainerFrame.origin.x = kGlassInset;
-        descriptionContainerFrame.origin.y = CGRectGetMaxY(self.backgroundView.frame) + kGlassGap;
+        descriptionContainerFrame.origin.y = CGRectGetMaxY(self.backgroundView.frame) + 2;
     } else {
         descriptionContainerFrame.size.width = CGRectGetWidth(self.bounds);
         descriptionContainerFrame.size.height = kDescriptionContainerHeight;
@@ -203,55 +181,27 @@
     descriptionSafeAreaContainerFrame.origin.y = CGRectGetMinY(safeArea);
     self.selectedViewDescriptionSafeAreaContainer.frame = descriptionSafeAreaContainerFrame;
 
-    CGRect selectedViewColorFrame = CGRectZero;
-    selectedViewColorFrame.size.width = kSelectedViewColorDiameter;
-    selectedViewColorFrame.size.height = kSelectedViewColorDiameter;
-    selectedViewColorFrame.origin.x = kHorizontalPadding;
-    selectedViewColorFrame.origin.y = FLEXFloor((kDescriptionContainerHeight - kSelectedViewColorDiameter) / 2.0);
+    CGRect selectedViewColorFrame = CGRectMake(kHorizontalPadding, FLEXFloor((kDescriptionContainerHeight - kSelectedViewColorDiameter) / 2.0), kSelectedViewColorDiameter, kSelectedViewColorDiameter);
     self.selectedViewColorIndicator.frame = selectedViewColorFrame;
     self.selectedViewColorIndicator.layer.cornerRadius = ceil(selectedViewColorFrame.size.height / 2.0);
-    
+
     CGRect descriptionLabelFrame = CGRectZero;
     CGFloat descriptionOriginX = CGRectGetMaxX(selectedViewColorFrame) + kHorizontalPadding;
     descriptionLabelFrame.size.height = kDescriptionLabelHeight;
     descriptionLabelFrame.origin.x = descriptionOriginX;
     descriptionLabelFrame.origin.y = kDescriptionVerticalPadding;
-    descriptionLabelFrame.size.width = MAX(0, CGRectGetMaxX(self.selectedViewDescriptionContainer.bounds) - kHorizontalPadding - descriptionOriginX);
+    descriptionLabelFrame.size.width = MAX(0, CGRectGetWidth(self.selectedViewDescriptionSafeAreaContainer.bounds) - kHorizontalPadding - descriptionOriginX);
     self.selectedViewDescriptionLabel.frame = descriptionLabelFrame;
 }
 
-#pragma mark - Setter Overrides
-
 - (void)setToolbarItems:(NSArray<FLEXExplorerToolbarItem *> *)toolbarItems {
-    if (_toolbarItems == toolbarItems) {
-        return;
-    }
-    
-    for (FLEXExplorerToolbarItem *item in _toolbarItems) {
-        [item.currentItem removeFromSuperview];
-    }
-    
-    if (toolbarItems.count > 6) {
-        toolbarItems = [toolbarItems subarrayWithRange:NSMakeRange(0, 6)];
-    }
-
-    for (FLEXExplorerToolbarItem *item in toolbarItems) {
-        [self addSubview:item.currentItem];
-    }
-
+    if (_toolbarItems == toolbarItems) return;
+    for (FLEXExplorerToolbarItem *item in _toolbarItems) [item.currentItem removeFromSuperview];
+    if (toolbarItems.count > 7) toolbarItems = [toolbarItems subarrayWithRange:NSMakeRange(0, 7)];
+    for (FLEXExplorerToolbarItem *item in toolbarItems) [self addSubview:item.currentItem];
     _toolbarItems = toolbarItems.copy;
     [self setNeedsLayout];
     [self layoutIfNeeded];
-}
-
-- (void)installColorItem:(FLEXExplorerToolbarItem *)item {
-    if (!item || self.colorItem == item) return;
-    self.colorItem = item;
-    NSMutableArray<FLEXExplorerToolbarItem *> *items = [self.toolbarItems mutableCopy] ?: [NSMutableArray array];
-    [items removeObject:item];
-    NSUInteger insertIndex = MIN((NSUInteger)4, items.count);
-    [items insertObject:item atIndex:insertIndex];
-    self.toolbarItems = items;
 }
 
 - (void)setSelectedViewOverlayColor:(UIColor *)selectedViewOverlayColor {
@@ -265,12 +215,9 @@
     if (![_selectedViewDescription isEqual:selectedViewDescription]) {
         _selectedViewDescription = selectedViewDescription;
         self.selectedViewDescriptionLabel.text = selectedViewDescription;
-        BOOL showDescription = selectedViewDescription.length > 0;
-        self.selectedViewDescriptionContainer.hidden = !showDescription;
+        self.selectedViewDescriptionContainer.hidden = selectedViewDescription.length == 0;
     }
 }
-
-#pragma mark - Sizing Convenience Methods
 
 + (UIFont *)descriptionLabelFont { return [UIFont systemFontOfSize:12.0]; }
 + (CGFloat)toolbarItemHeight { return 44.0; }
