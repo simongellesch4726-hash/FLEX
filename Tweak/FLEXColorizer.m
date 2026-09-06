@@ -14,12 +14,15 @@ static const void *FLEXColorItemKey = &FLEXColorItemKey;
 @end
 
 @implementation FLEXExplorerToolbar (FLEXColorizerPrivate)
+
 - (FLEXExplorerToolbarItem *)flex_colorItem {
     return objc_getAssociatedObject(self, FLEXColorItemKey);
 }
+
 - (void)flex_setColorItem:(FLEXExplorerToolbarItem *)item {
     objc_setAssociatedObject(self, FLEXColorItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+
 @end
 
 @implementation FLEXExplorerViewController (FLEXColorizer)
@@ -44,10 +47,15 @@ static const void *FLEXColorItemKey = &FLEXColorItemKey;
     if (toolbar.flex_colorItem) return;
 
     UIImage *image = nil;
-    if (@available(iOS 13.0, *)) image = [UIImage systemImageNamed:@"paintpalette.fill"];
+    if (@available(iOS 13.0, *)) {
+        image = [UIImage systemImageNamed:@"paintpalette.fill"];
+    }
+    if (!image) {
+        image = [UIImage systemImageNamed:@"paintbrush.fill"];
+    }
 
     FLEXExplorerToolbarItem *item = [FLEXExplorerToolbarItem itemWithTitle:@"color" image:image];
-    item.enabled = NO;
+    item.enabled = self.selectedView != nil;
     [item addTarget:self action:@selector(flex_colorButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [toolbar flex_setColorItem:item];
 
@@ -60,14 +68,17 @@ static const void *FLEXColorItemKey = &FLEXColorItemKey;
 
 - (void)flex_updateButtonStates_colorizer {
     [self flex_updateButtonStates_colorizer];
-    FLEXExplorerToolbar *toolbar = self.explorerToolbar;
-    FLEXExplorerToolbarItem *item = toolbar.flex_colorItem;
-    if (item) item.enabled = ([self valueForKey:@"selectedView"] != nil);
+
+    FLEXExplorerToolbarItem *item = self.explorerToolbar.flex_colorItem;
+    if (item) {
+        item.enabled = self.selectedView != nil;
+    }
 }
 
 - (void)flex_colorButtonTapped:(FLEXExplorerToolbarItem *)sender {
-    UIView *view = [self valueForKey:@"selectedView"];
+    UIView *view = self.selectedView;
     if (!view) return;
+
     FLEXColorEditorViewController *editor = [[FLEXColorEditorViewController alloc] initWithView:view];
     [[FLEXManager sharedManager] presentEmbeddedTool:editor completion:nil];
 }
