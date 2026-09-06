@@ -12,9 +12,11 @@
 @implementation FLEXColorTarget
 @end
 
-@interface FLEXColorEditorViewController () <FLEXArgumentInputViewDelegate>
+@interface FLEXColorEditorViewController ()
 @property (nonatomic, weak) UIView *targetView;
 @property (nonatomic) NSArray<FLEXColorTarget *> *targets;
+@property (nonatomic, strong) FLEXColorTarget *activeTarget;
+@property (nonatomic, strong) FLEXArgumentInputColorView *activePicker;
 @end
 
 @implementation FLEXColorEditorViewController
@@ -68,153 +70,63 @@
 
     if ([view isKindOfClass:[UIButton class]]) {
         UIButton *button = (UIButton *)view;
-        addTarget(@"Background", @"background", ^UIColor *{
-            return button.backgroundColor;
-        }, ^(UIColor *color) {
-            button.backgroundColor = color;
-        });
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return button.tintColor;
-        }, ^(UIColor *color) {
-            button.tintColor = color;
-        });
-
-        NSArray<NSNumber *> *states = @[
-            @(UIControlStateNormal),
-            @(UIControlStateHighlighted),
-            @(UIControlStateSelected),
-            @(UIControlStateDisabled)
-        ];
+        addTarget(@"Background", @"background", ^UIColor *{ return button.backgroundColor; }, ^(UIColor *color){ button.backgroundColor = color; });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return button.tintColor; }, ^(UIColor *color){ button.tintColor = color; });
+        NSArray<NSNumber *> *states = @[@(UIControlStateNormal), @(UIControlStateHighlighted), @(UIControlStateSelected), @(UIControlStateDisabled)];
         for (NSNumber *number in states) {
             UIControlState state = number.unsignedIntegerValue;
             NSString *name = state == UIControlStateNormal ? @"Title (Normal)" :
                 state == UIControlStateHighlighted ? @"Title (Highlighted)" :
                 state == UIControlStateSelected ? @"Title (Selected)" : @"Title (Disabled)";
             NSString *identifier = [NSString stringWithFormat:@"title.%lu", (unsigned long)state];
-            addTarget(name, identifier, ^UIColor *{
-                return [button titleColorForState:state];
-            }, ^(UIColor *color) {
-                [button setTitleColor:color forState:state];
-            });
+            addTarget(name, identifier, ^UIColor *{ return [button titleColorForState:state]; }, ^(UIColor *color){ [button setTitleColor:color forState:state]; });
         }
     } else if ([view isKindOfClass:[UILabel class]]) {
         UILabel *label = (UILabel *)view;
-        addTarget(@"Text", @"text", ^UIColor *{
-            return label.textColor;
-        }, ^(UIColor *color) {
-            label.textColor = color;
-        });
-        addTarget(@"Background", @"background", ^UIColor *{
-            return label.backgroundColor;
-        }, ^(UIColor *color) {
-            label.backgroundColor = color;
-        });
+        addTarget(@"Text", @"text", ^UIColor *{ return label.textColor; }, ^(UIColor *color){ label.textColor = color; });
+        addTarget(@"Background", @"background", ^UIColor *{ return label.backgroundColor; }, ^(UIColor *color){ label.backgroundColor = color; });
     } else if ([view isKindOfClass:[UITextField class]]) {
         UITextField *field = (UITextField *)view;
-        addTarget(@"Text", @"text", ^UIColor *{
-            return field.textColor;
-        }, ^(UIColor *color) {
-            field.textColor = color;
-        });
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return field.tintColor;
-        }, ^(UIColor *color) {
-            field.tintColor = color;
-        });
-        addTarget(@"Background", @"background", ^UIColor *{
-            return field.backgroundColor;
-        }, ^(UIColor *color) {
-            field.backgroundColor = color;
-        });
+        addTarget(@"Text", @"text", ^UIColor *{ return field.textColor; }, ^(UIColor *color){ field.textColor = color; });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return field.tintColor; }, ^(UIColor *color){ field.tintColor = color; });
+        addTarget(@"Background", @"background", ^UIColor *{ return field.backgroundColor; }, ^(UIColor *color){ field.backgroundColor = color; });
     } else if ([view isKindOfClass:[UITextView class]]) {
         UITextView *textView = (UITextView *)view;
-        addTarget(@"Text", @"text", ^UIColor *{
-            return textView.textColor;
-        }, ^(UIColor *color) {
-            textView.textColor = color;
-        });
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return textView.tintColor;
-        }, ^(UIColor *color) {
-            textView.tintColor = color;
-        });
-        addTarget(@"Background", @"background", ^UIColor *{
-            return textView.backgroundColor;
-        }, ^(UIColor *color) {
-            textView.backgroundColor = color;
-        });
+        addTarget(@"Text", @"text", ^UIColor *{ return textView.textColor; }, ^(UIColor *color){ textView.textColor = color; });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return textView.tintColor; }, ^(UIColor *color){ textView.tintColor = color; });
+        addTarget(@"Background", @"background", ^UIColor *{ return textView.backgroundColor; }, ^(UIColor *color){ textView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UIImageView class]]) {
         UIImageView *imageView = (UIImageView *)view;
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return imageView.tintColor;
-        }, ^(UIColor *color) {
-            imageView.tintColor = color;
-        });
-        addTarget(@"Background", @"background", ^UIColor *{
-            return imageView.backgroundColor;
-        }, ^(UIColor *color) {
-            imageView.backgroundColor = color;
-        });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
+        addTarget(@"Background", @"background", ^UIColor *{ return imageView.backgroundColor; }, ^(UIColor *color){ imageView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UISwitch class]]) {
         UISwitch *control = (UISwitch *)view;
-        addTarget(@"On Tint", @"onTint", ^UIColor *{
-            return control.onTintColor;
-        }, ^(UIColor *color) {
-            control.onTintColor = color;
-        });
-        addTarget(@"Thumb Tint", @"thumbTint", ^UIColor *{
-            return control.thumbTintColor;
-        }, ^(UIColor *color) {
-            control.thumbTintColor = color;
-        });
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return control.tintColor;
-        }, ^(UIColor *color) {
-            control.tintColor = color;
-        });
+        addTarget(@"On Tint", @"onTint", ^UIColor *{ return control.onTintColor; }, ^(UIColor *color){ control.onTintColor = color; });
+        addTarget(@"Thumb Tint", @"thumbTint", ^UIColor *{ return control.thumbTintColor; }, ^(UIColor *color){ control.thumbTintColor = color; });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return control.tintColor; }, ^(UIColor *color){ control.tintColor = color; });
     } else if ([view isKindOfClass:[UISlider class]]) {
         UISlider *slider = (UISlider *)view;
-        addTarget(@"Minimum Track", @"minimumTrack", ^UIColor *{
-            return slider.minimumTrackTintColor;
-        }, ^(UIColor *color) {
-            slider.minimumTrackTintColor = color;
-        });
-        addTarget(@"Maximum Track", @"maximumTrack", ^UIColor *{
-            return slider.maximumTrackTintColor;
-        }, ^(UIColor *color) {
-            slider.maximumTrackTintColor = color;
-        });
-        addTarget(@"Thumb", @"thumb", ^UIColor *{
-            return slider.thumbTintColor;
-        }, ^(UIColor *color) {
-            slider.thumbTintColor = color;
-        });
+        addTarget(@"Minimum Track", @"minimumTrack", ^UIColor *{ return slider.minimumTrackTintColor; }, ^(UIColor *color){ slider.minimumTrackTintColor = color; });
+        addTarget(@"Maximum Track", @"maximumTrack", ^UIColor *{ return slider.maximumTrackTintColor; }, ^(UIColor *color){ slider.maximumTrackTintColor = color; });
+        addTarget(@"Thumb", @"thumb", ^UIColor *{ return slider.thumbTintColor; }, ^(UIColor *color){ slider.thumbTintColor = color; });
     }
 
-    // Composite visual elements remain a single selected UIView. We do not walk
-    // or recolor descendant views automatically.
     BOOL specialized = [view isKindOfClass:[UIButton class]] ||
-                        [view isKindOfClass:[UILabel class]] ||
-                        [view isKindOfClass:[UITextField class]] ||
-                        [view isKindOfClass:[UITextView class]] ||
-                        [view isKindOfClass:[UIImageView class]] ||
-                        [view isKindOfClass:[UISwitch class]] ||
-                        [view isKindOfClass:[UISlider class]];
+        [view isKindOfClass:[UILabel class]] ||
+        [view isKindOfClass:[UITextField class]] ||
+        [view isKindOfClass:[UITextView class]] ||
+        [view isKindOfClass:[UIImageView class]] ||
+        [view isKindOfClass:[UISwitch class]] ||
+        [view isKindOfClass:[UISlider class]];
 
     if (!specialized) {
-        addTarget(@"Background", @"background", ^UIColor *{
-            return view.backgroundColor;
-        }, ^(UIColor *color) {
-            view.backgroundColor = color;
-        });
-        addTarget(@"Tint", @"tint", ^UIColor *{
-            return view.tintColor;
-        }, ^(UIColor *color) {
-            view.tintColor = color;
-        });
+        // Intentionally operate on the selected UIView only. Descendants are not
+        // traversed, so composite glyphs remain a single visual element.
+        addTarget(@"Background", @"background", ^UIColor *{ return view.backgroundColor; }, ^(UIColor *color){ view.backgroundColor = color; });
+        addTarget(@"Tint", @"tint", ^UIColor *{ return view.tintColor; }, ^(UIColor *color){ view.tintColor = color; });
     }
 
-    self.targets = targets;
+    self.targets = targets.copy;
 }
 
 - (void)persist:(UIColor *)color identifier:(NSString *)identifier {
@@ -234,14 +146,11 @@
     static NSString *reuseIdentifier = @"FLEXColorTargetCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1
-                                       reuseIdentifier:reuseIdentifier];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier];
     }
 
     FLEXColorTarget *target = self.targets[indexPath.row];
-    UIColor *color = target.readColor ? target.readColor() : UIColor.clearColor;
-    color = [self resolvedEditableColor:color fallback:UIColor.clearColor];
-
+    UIColor *color = [self resolvedEditableColor:target.readColor ? target.readColor() : UIColor.clearColor fallback:UIColor.clearColor];
     cell.textLabel.text = target.name;
     cell.detailTextLabel.text = [self hexStringForColor:color];
     cell.detailTextLabel.textColor = UIColor.labelColor;
@@ -251,13 +160,11 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    FLEXColorTarget *target = self.targets[indexPath.row];
-    [self presentColorPickerForTarget:target];
+    [self presentColorPickerForTarget:self.targets[indexPath.row]];
 }
 
 - (UIColor *)resolvedEditableColor:(UIColor *)color fallback:(UIColor *)fallback {
     if (!color) return fallback;
-
     if (@available(iOS 13.0, *)) {
         color = [color resolvedColorWithTraitCollection:self.targetView.traitCollection];
     }
@@ -273,72 +180,61 @@
 }
 
 - (void)presentColorPickerForTarget:(FLEXColorTarget *)target {
-    FLEXArgumentInputColorView *picker =
-        [[FLEXArgumentInputColorView alloc] initWithArgumentTypeEncoding:@encode(UIColor *)];
+    FLEXArgumentInputColorView *picker = [[FLEXArgumentInputColorView alloc] initWithArgumentTypeEncoding:@encode(UIColor *)];
     picker.targetSize = FLEXArgumentInputViewSizeLarge;
-    picker.delegate = self;
 
-    UIColor *current = target.readColor ? target.readColor() : UIColor.clearColor;
-    picker.inputValue = [self resolvedEditableColor:current fallback:UIColor.clearColor];
+    UIColor *current = [self resolvedEditableColor:target.readColor ? target.readColor() : UIColor.clearColor fallback:UIColor.clearColor];
+    picker.inputValue = current;
 
     UIViewController *controller = [UIViewController new];
     controller.title = target.name;
     controller.view.backgroundColor = UIColor.systemBackgroundColor;
-    controller.view.autoresizesSubviews = YES;
-
     [controller.view addSubview:picker];
-    self->_activeTarget = target;
-    self->_activePicker = picker;
 
-    controller.navigationItem.leftBarButtonItem =
-        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                                                       target:self
-                                                       action:@selector(cancelPicker)];
-    controller.navigationItem.rightBarButtonItem =
-        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
-                                                       target:self
-                                                       action:@selector(applyPicker)];
+    self.activeTarget = target;
+    self.activePicker = picker;
+
+    controller.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
+        target:self
+        action:@selector(cancelPicker)
+    ];
+    controller.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+        target:self
+        action:@selector(applyPicker)
+    ];
 
     picker.translatesAutoresizingMaskIntoConstraints = NO;
     [NSLayoutConstraint activateConstraints:@[
         [picker.leadingAnchor constraintEqualToAnchor:controller.view.leadingAnchor constant:16.0],
         [picker.trailingAnchor constraintEqualToAnchor:controller.view.trailingAnchor constant:-16.0],
         [picker.topAnchor constraintEqualToAnchor:controller.view.safeAreaLayoutGuide.topAnchor constant:16.0],
+        [picker.bottomAnchor constraintLessThanOrEqualToAnchor:controller.view.safeAreaLayoutGuide.bottomAnchor constant:-16.0]
     ]];
 
-    UINavigationController *navigationController =
-        [[UINavigationController alloc] initWithRootViewController:controller];
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:controller];
     [self presentViewController:navigationController animated:YES completion:nil];
 }
 
 - (void)cancelPicker {
-    self->_activeTarget = nil;
-    self->_activePicker = nil;
+    self.activeTarget = nil;
+    self.activePicker = nil;
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)applyPicker {
-    FLEXColorTarget *target = self->_activeTarget;
-    FLEXArgumentInputColorView *picker = self->_activePicker;
+    FLEXColorTarget *target = self.activeTarget;
+    FLEXArgumentInputColorView *picker = self.activePicker;
     if (target && picker) {
-        UIColor *newColor = [self resolvedEditableColor:picker.inputValue fallback:UIColor.clearColor];
-        target.writeColor(newColor);
+        UIColor *color = [self resolvedEditableColor:picker.inputValue fallback:UIColor.clearColor];
+        target.writeColor(color);
     }
-
-    self->_activeTarget = nil;
-    self->_activePicker = nil;
+    self.activeTarget = nil;
+    self.activePicker = nil;
     [self dismissViewControllerAnimated:YES completion:^{
         [self.tableView reloadData];
     }];
-}
-
-- (void)argumentInputViewValueDidChange:(FLEXArgumentInputView *)argumentInputView {
-    FLEXColorTarget *target = self->_activeTarget;
-    FLEXArgumentInputColorView *picker = self->_activePicker;
-    if (target && picker == argumentInputView) {
-        UIColor *newColor = [self resolvedEditableColor:picker.inputValue fallback:UIColor.clearColor];
-        target.writeColor(newColor);
-    }
 }
 
 - (NSString *)hexStringForColor:(UIColor *)color {
