@@ -60,6 +60,25 @@
     return UIColor.clearColor;
 }
 
+- (UIColor *)effectiveButtonTitleColor:(UIButton *)button state:(UIControlState)state {
+    UIColor *color = [button titleColorForState:state];
+    if (color) {
+        return color;
+    }
+
+    if (@available(iOS 15.0, *)) {
+        UIButtonConfiguration *configuration = button.configuration;
+        if (configuration) {
+            UIColor *foreground = configuration.baseForegroundColor;
+            if (foreground) {
+                return foreground;
+            }
+        }
+    }
+
+    return button.tintColor ?: UIColor.labelColor;
+}
+
 - (void)buildTargets {
     UIView *view = self.targetView;
     if (!view) {
@@ -98,7 +117,7 @@
             NSString *name = entry[@"name"];
             NSString *identifier = [NSString stringWithFormat:@"title.%lu", (unsigned long)state];
             addTarget(name, identifier,
-                ^UIColor *{ return [button titleColorForState:state]; },
+                ^UIColor *{ return [self effectiveButtonTitleColor:button state:state]; },
                 ^(UIColor *color){ [button setTitleColor:color forState:state]; }
             );
         }
