@@ -59,7 +59,7 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
       - name: Install tweak signing tools
-        run: brew install ldid
+        run: brew install ldid dpkg
       - name: Build FLEX Loader tweak package
         working-directory: Tweak
         run: make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
@@ -67,10 +67,11 @@ jobs:
         working-directory: Tweak
         run: |
           test -f .theos/obj/FLEXLoader.dylib
-          test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
+          package=$(find packages -maxdepth 1 -name '*.deb' -print -quit)
+          test -n "$package"
           lipo -info .theos/obj/FLEXLoader.dylib
-          dpkg-deb -I "$(find packages -maxdepth 1 -name '*.deb' -print -quit)" | tee package-control.txt
-          dpkg-deb -c "$(find packages -maxdepth 1 -name '*.deb' -print -quit)" | tee package-contents.txt
+          dpkg-deb -I "$package" | tee package-control.txt
+          dpkg-deb -c "$package" | tee package-contents.txt
           grep -q "com.simongellesch4726.flexloader" package-control.txt
           grep -q "FLEXLoader.dylib" package-contents.txt
           ! grep -q "Settings" package-contents.txt
