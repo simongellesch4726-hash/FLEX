@@ -4,26 +4,6 @@
 #import "../Classes/Toolbar/FLEXExplorerToolbar.h"
 #import "../Classes/Toolbar/FLEXExplorerToolbarItem.h"
 #import "FLEXColorEditorViewController.h"
-#import <objc/runtime.h>
-
-static const void *FLEXColorItemKey = &FLEXColorItemKey;
-
-@interface FLEXExplorerToolbar (FLEXColorizerPrivate)
-@property (nonatomic, readonly) FLEXExplorerToolbarItem *flex_colorItem;
-- (void)flex_setColorItem:(FLEXExplorerToolbarItem *)item;
-@end
-
-@implementation FLEXExplorerToolbar (FLEXColorizerPrivate)
-
-- (FLEXExplorerToolbarItem *)flex_colorItem {
-    return objc_getAssociatedObject(self, FLEXColorItemKey);
-}
-
-- (void)flex_setColorItem:(FLEXExplorerToolbarItem *)item {
-    objc_setAssociatedObject(self, FLEXColorItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-@end
 
 @implementation FLEXExplorerViewController (FLEXColorizer)
 
@@ -43,36 +23,18 @@ static const void *FLEXColorItemKey = &FLEXColorItemKey;
 - (void)flex_viewDidLoad_colorizer {
     [self flex_viewDidLoad_colorizer];
 
-    FLEXExplorerToolbar *toolbar = self.explorerToolbar;
-    if (toolbar.flex_colorItem) return;
+    FLEXExplorerToolbarItem *item = self.explorerToolbar.colorItem;
+    if (!item) return;
 
-    UIImage *image = nil;
-    if (@available(iOS 13.0, *)) {
-        image = [UIImage systemImageNamed:@"paintpalette.fill"];
-    }
-    if (!image) {
-        image = [UIImage systemImageNamed:@"paintbrush.fill"];
-    }
-
-    FLEXExplorerToolbarItem *item = [FLEXExplorerToolbarItem itemWithTitle:@"color" image:image];
-    item.enabled = self.selectedView != nil;
     [item addTarget:self action:@selector(flex_colorButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [toolbar flex_setColorItem:item];
-
-    NSMutableArray<FLEXExplorerToolbarItem *> *items = [toolbar.toolbarItems mutableCopy];
-    if (![items containsObject:item]) {
-        [items insertObject:item atIndex:MIN((NSUInteger)3, items.count)];
-        toolbar.toolbarItems = items;
-    }
+    item.enabled = self.selectedView != nil;
 }
 
 - (void)flex_updateButtonStates_colorizer {
     [self flex_updateButtonStates_colorizer];
 
-    FLEXExplorerToolbarItem *item = self.explorerToolbar.flex_colorItem;
-    if (item) {
-        item.enabled = self.selectedView != nil;
-    }
+    FLEXExplorerToolbarItem *item = self.explorerToolbar.colorItem;
+    if (item) item.enabled = self.selectedView != nil;
 }
 
 - (void)flex_colorButtonTapped:(FLEXExplorerToolbarItem *)sender {
