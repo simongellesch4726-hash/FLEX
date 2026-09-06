@@ -1,0 +1,1 @@
+$(shell echo '# MINIMAL MAKEFILE TEST' >/tmp/flex-makefile-test)
