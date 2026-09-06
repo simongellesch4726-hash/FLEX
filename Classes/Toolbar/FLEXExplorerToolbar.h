@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FLEXExplorerToolbar : UIView
 
 /// The items to be displayed in the toolbar. Defaults to:
-/// globalsItem, hierarchyItem, selectItem, moveItem, closeItem
+/// globalsItem, hierarchyItem, selectItem, moveItem, colorItem, closeItem
 @property (nonatomic, copy) NSArray<FLEXExplorerToolbarItem *> *toolbarItems;
 
 /// Toolbar item for selecting views.
@@ -29,6 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Toolbar item for moving views.
 /// Its \c sibling is the \c lastTabItem
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *moveItem;
+
+/// Toolbar item for editing colors on the selected view.
+/// Set by the FLEX colorizer integration.
+@property (nonatomic, readonly, nullable) FLEXExplorerToolbarItem *colorItem;
 
 /// Toolbar item for presenting the currently active tab.
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *recentItem;
@@ -52,6 +56,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Area where details of the selected view are shown
 /// Users of the toolbar can attach a tap gesture recognizer to show additional details.
 @property (nonatomic, readonly) UIView *selectedViewDescriptionContainer;
+
+/// Installs the color editing action into the toolbar. This is intentionally
+/// exposed as a tiny integration point so the colorizer does not need to replace
+/// FLEX's normal toolbar action flow.
+- (void)installColorItem:(FLEXExplorerToolbarItem *)item;
 
 @end
 
