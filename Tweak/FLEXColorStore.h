@@ -6,6 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)sharedStore;
 - (void)setColor:(UIColor *)color forView:(UIView *)view target:(NSString *)target;
 - (nullable UIColor *)colorForView:(UIView *)view target:(NSString *)target;
+- (void)applyStoredColorsToWindow:(UIWindow *)window;
 - (void)resetColors;
 @end
 
