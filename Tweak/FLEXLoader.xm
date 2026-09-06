@@ -1,31 +1,13 @@
 #import <UIKit/UIKit.h>
 #import "../Classes/Manager/FLEXManager.h"
 
-static void FLEXInstallThreeFingerGesture(void) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        static BOOL installed = NO;
-        if (installed) return;
-        installed = YES;
-
-        for (UIWindow *window in UIApplication.sharedApplication.windows) {
-            if ([window isKindOfClass:NSClassFromString(@"FLEXWindow")]) continue;
-            if ([window viewWithTag:0x464C4558]) continue;
-
-            UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:[FLEXGestureTarget sharedTarget] action:@selector(handleThreeFinger:)];
-            tap.numberOfTouchesRequired = 3;
-            tap.numberOfTapsRequired = 1;
-            tap.cancelsTouchesInView = NO;
-            [window addGestureRecognizer:tap];
-        }
-    });
-}
-
 @interface FLEXGestureTarget : NSObject
 + (instancetype)sharedTarget;
 - (void)handleThreeFinger:(UITapGestureRecognizer *)gesture;
 @end
 
 @implementation FLEXGestureTarget
+
 + (instancetype)sharedTarget {
     static FLEXGestureTarget *target;
     static dispatch_once_t onceToken;
@@ -34,18 +16,41 @@ static void FLEXInstallThreeFingerGesture(void) {
 }
 
 - (void)handleThreeFinger:(UITapGestureRecognizer *)gesture {
-    if (gesture.state != UIGestureRecognizerStateRecognized) return;
-    [[FLEXManager sharedManager] toggleExplorer];
+    if (gesture.state == UIGestureRecognizerStateRecognized) {
+        [[FLEXManager sharedManager] toggleExplorer];
+    }
 }
+
 @end
 
 %ctor {
-    @autoreleasepool {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            FLEXInstallThreeFingerGesture();
+    dispatch_async(dispatch_get_main_queue(), ^{
+        static BOOL observerInstalled = NO;
+        FLEXGestureTarget *target = FLEXGestureTarget.sharedTarget;
+        void (^install)(void) = ^{
+            for (UIWindow *window in UIApplication.sharedApplication.windows) {
+                if ([NSStringFromClass(window.class) hasPrefix:@"FLEX"]) continue;
+                BOOL exists = NO;
+                for (UIGestureRecognizer *recognizer in window.gestureRecognizers) {
+                    if ([recognizer isKindOfClass:[UITapGestureRecognizer class]] && recognizer.numberOfTouchesRequired == 3 && recognizer.numberOfTapsRequired == 1) {
+                        exists = YES;
+                        break;
+                    }
+                }
+                if (exists) continue;
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:target action:@selector(handleThreeFinger:)];
+                tap.numberOfTouchesRequired = 3;
+                tap.numberOfTapsRequired = 1;
+                tap.cancelsTouchesInView = NO;
+                [window addGestureRecognizer:tap];
+            }
+        };
+        install();
+        if (!observerInstalled) {
+            observerInstalled = YES;
             [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeVisibleNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-                FLEXInstallThreeFingerGesture();
+                install();
             }];
-        });
-    }
+        }
+    });
 }
