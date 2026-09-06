@@ -14,7 +14,9 @@
 
 @interface FLEXColorEditorViewController ()
 @property (nonatomic, weak) UIView *targetView;
-@property (nonatomic) NSArray<FLEXColorTarget *> *targets;
+@property (nonatomic, copy) NSArray<FLEXColorTarget *> *targets;
+@property (nonatomic, strong) FLEXColorTarget *activeTarget;
+@property (nonatomic, strong) FLEXArgumentInputColorView *activePicker;
 @end
 
 @implementation FLEXColorEditorViewController
@@ -41,6 +43,21 @@
 
 - (void)done {
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (UIColor *)editableColor:(UIColor *)color {
+    if (!color) return UIColor.clearColor;
+    if (@available(iOS 13.0, *)) {
+        color = [color resolvedColorWithTraitCollection:self.targetView.traitCollection];
+    }
+    CGFloat r = 0, g = 0, b = 0, a = 1, w = 0;
+    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
+        return [UIColor colorWithRed:r green:g blue:b alpha:a];
+    }
+    if ([color getWhite:&w alpha:&a]) {
+        return [UIColor colorWithWhite:w alpha:a];
+    }
+    return UIColor.clearColor;
 }
 
 - (void)buildTargets {
@@ -70,14 +87,20 @@
         UIButton *button = (UIButton *)view;
         addTarget(@"Background", @"background", ^UIColor *{ return button.backgroundColor; }, ^(UIColor *color){ button.backgroundColor = color; });
         addTarget(@"Tint", @"tint", ^UIColor *{ return button.tintColor; }, ^(UIColor *color){ button.tintColor = color; });
-        NSArray<NSNumber *> *states = @[@(UIControlStateNormal), @(UIControlStateHighlighted), @(UIControlStateSelected), @(UIControlStateDisabled)];
-        for (NSNumber *number in states) {
-            UIControlState state = number.unsignedIntegerValue;
-            NSString *name = state == UIControlStateNormal ? @"Title (Normal)" :
-                state == UIControlStateHighlighted ? @"Title (Highlighted)" :
-                state == UIControlStateSelected ? @"Title (Selected)" : @"Title (Disabled)";
+        NSArray<NSDictionary *> *states = @[
+            @{ @"name": @"Title (Normal)", @"id": @(UIControlStateNormal) },
+            @{ @"name": @"Title (Highlighted)", @"id": @(UIControlStateHighlighted) },
+            @{ @"name": @"Title (Selected)", @"id": @(UIControlStateSelected) },
+            @{ @"name": @"Title (Disabled)", @"id": @(UIControlStateDisabled) }
+        ];
+        for (NSDictionary *entry in states) {
+            UIControlState state = [entry[@"id"] unsignedIntegerValue];
+            NSString *name = entry[@"name"];
             NSString *identifier = [NSString stringWithFormat:@"title.%lu", (unsigned long)state];
-            addTarget(name, identifier, ^UIColor *{ return [button titleColorForState:state]; }, ^(UIColor *color){ [button setTitleColor:color forState:state]; });
+            addTarget(name, identifier,
+                ^UIColor *{ return [button titleColorForState:state]; },
+                ^(UIColor *color){ [button setTitleColor:color forState:state]; }
+            );
         }
     } else if ([view isKindOfClass:[UILabel class]]) {
         UILabel *label = (UILabel *)view;
@@ -95,11 +118,7 @@
         addTarget(@"Background", @"background", ^UIColor *{ return textView.backgroundColor; }, ^(UIColor *color){ textView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UIImageView class]]) {
         UIImageView *imageView = (UIImageView *)view;
-        if (imageView.image.renderingMode != UIImageRenderingModeAlwaysOriginal) {
-            addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
-        } else {
-            addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
-        }
+        addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
         addTarget(@"Background", @"background", ^UIColor *{ return imageView.backgroundColor; }, ^(UIColor *color){ imageView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UISwitch class]]) {
         UISwitch *control = (UISwitch *)view;
@@ -148,9 +167,8 @@
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier];
     }
-
     FLEXColorTarget *target = self.targets[indexPath.row];
-    UIColor *color = [self resolvedEditableColor:target.readColor ? target.readColor() : UIColor.clearColor fallback:UIColor.clearColor];
+    UIColor *color = [self editableColor:target.readColor ? target.readColor() : UIColor.clearColor];
     cell.textLabel.text = target.name;
     cell.detailTextLabel.text = [self hexStringForColor:color];
     cell.detailTextLabel.textColor = UIColor.labelColor;
@@ -163,28 +181,10 @@
     [self presentColorPickerForTarget:self.targets[indexPath.row]];
 }
 
-- (UIColor *)resolvedEditableColor:(UIColor *)color fallback:(UIColor *)fallback {
-    if (!color) return fallback;
-    if (@available(iOS 13.0, *)) {
-        color = [color resolvedColorWithTraitCollection:self.targetView.traitCollection];
-    }
-
-    CGFloat r = 0, g = 0, b = 0, a = 1, w = 0;
-    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
-        return [UIColor colorWithRed:r green:g blue:b alpha:a];
-    }
-    if ([color getWhite:&w alpha:&a]) {
-        return [UIColor colorWithWhite:w alpha:a];
-    }
-    return fallback;
-}
-
 - (void)presentColorPickerForTarget:(FLEXColorTarget *)target {
     FLEXArgumentInputColorView *picker = [[FLEXArgumentInputColorView alloc] initWithArgumentTypeEncoding:@encode(UIColor *)];
     picker.targetSize = FLEXArgumentInputViewSizeLarge;
-
-    UIColor *current = [self resolvedEditableColor:target.readColor ? target.readColor() : UIColor.clearColor fallback:UIColor.clearColor];
-    picker.inputValue = current;
+    picker.inputValue = [self editableColor:target.readColor ? target.readColor() : UIColor.clearColor];
 
     UIViewController *controller = [UIViewController new];
     controller.title = target.name;
@@ -193,7 +193,6 @@
 
     self.activeTarget = target;
     self.activePicker = picker;
-
     controller.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
         initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
         target:self
@@ -227,8 +226,7 @@
     FLEXColorTarget *target = self.activeTarget;
     FLEXArgumentInputColorView *picker = self.activePicker;
     if (target && picker) {
-        UIColor *color = [self resolvedEditableColor:picker.inputValue fallback:UIColor.clearColor];
-        target.writeColor(color);
+        target.writeColor([self editableColor:picker.inputValue]);
     }
     self.activeTarget = nil;
     self.activePicker = nil;
