@@ -45,37 +45,31 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
 }
 
 - (UIColor *)staticColorFromColor:(UIColor *)color forView:(UIView *)view {
-    if (!color) return nil;
+    if (!color || !view) return nil;
     if (@available(iOS 13.0, *)) color = [color resolvedColorWithTraitCollection:view.traitCollection];
 
     CGFloat r = 0, g = 0, b = 0, a = 1, w = 0;
-    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
-        return [UIColor colorWithRed:r green:g blue:b alpha:a];
-    }
-    if ([color getWhite:&w alpha:&a]) {
-        return [UIColor colorWithWhite:w alpha:a];
-    }
+    if ([color getRed:&r green:&g blue:&b alpha:&a]) return [UIColor colorWithRed:r green:g blue:b alpha:a];
+    if ([color getWhite:&w alpha:&a]) return [UIColor colorWithWhite:w alpha:a];
     return nil;
 }
 
 - (void)setColor:(UIColor *)color forView:(UIView *)view target:(NSString *)target {
     UIColor *resolved = [self staticColorFromColor:color forView:view];
-    if (!view || !resolved) return;
+    if (!resolved) return;
 
     CGFloat r = 0, g = 0, b = 0, a = 1;
     [resolved getRed:&r green:&g blue:&b alpha:&a];
     NSString *identifier = [self identifierForView:view target:target];
-    self.entries[identifier] = @{
-        @"r": @(r), @"g": @(g), @"b": @(b), @"a": @(a)
-    };
+    self.entries[identifier] = @{@"r": @(r), @"g": @(g), @"b": @(b), @"a": @(a)};
     [[NSUserDefaults standardUserDefaults] setObject:self.entries forKey:kFLEXColorStoreDefaultsKey];
 }
 
 - (UIColor *)colorForView:(UIView *)view target:(NSString *)target {
     NSDictionary *entry = self.entries[[self identifierForView:view target:target]];
-    if (!entry) return nil;
     NSNumber *r = entry[@"r"], *g = entry[@"g"], *b = entry[@"b"], *a = entry[@"a"];
-    if (![r isKindOfClass:NSNumber.class] || ![g isKindOfClass:NSNumber.class] || ![b isKindOfClass:NSNumber.class] || ![a isKindOfClass:NSNumber.class]) return nil;
+    if (![r isKindOfClass:NSNumber.class] || ![g isKindOfClass:NSNumber.class] ||
+        ![b isKindOfClass:NSNumber.class] || ![a isKindOfClass:NSNumber.class]) return nil;
     return [UIColor colorWithRed:r.doubleValue green:g.doubleValue blue:b.doubleValue alpha:a.doubleValue];
 }
 
@@ -84,7 +78,6 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
 
     UIColor *background = [self colorForView:view target:@"background"];
     if (background) view.backgroundColor = background;
-
     UIColor *tint = [self colorForView:view target:@"tint"];
     if (tint) view.tintColor = tint;
 
