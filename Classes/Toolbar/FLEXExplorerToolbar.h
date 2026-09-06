@@ -20,47 +20,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// globalsItem, hierarchyItem, selectItem, moveItem, colorItem, closeItem
 @property (nonatomic, copy) NSArray<FLEXExplorerToolbarItem *> *toolbarItems;
 
-/// Toolbar item for selecting views.
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *selectItem;
-
-/// Toolbar item for presenting a list with the view hierarchy.
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *hierarchyItem;
-
-/// Toolbar item for moving views.
-/// Its \c sibling is the \c lastTabItem
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *moveItem;
-
-/// Toolbar item for editing colors on the selected view.
-/// Set by the FLEX colorizer integration.
-@property (nonatomic, readonly, nullable) FLEXExplorerToolbarItem *colorItem;
-
-/// Toolbar item for presenting the currently active tab.
+@property (nonatomic, readonly) FLEXExplorerToolbarItem *colorItem;
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *recentItem;
-
-/// Toolbar item for presenting a screen with various tools for inspecting the app.
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *globalsItem;
-
-/// Toolbar item for hiding the explorer.
 @property (nonatomic, readonly) FLEXExplorerToolbarItem *closeItem;
-
-/// A view for moving the entire toolbar.
-/// Users of the toolbar can attach a pan gesture recognizer to decide how to reposition the toolbar.
 @property (nonatomic, readonly) UIView *dragHandle;
-
-/// A color matching the overlay on color on the selected view.
 @property (nonatomic) UIColor *selectedViewOverlayColor;
-
-/// Description text for the selected view displayed below the toolbar items.
 @property (nonatomic, copy) NSString *selectedViewDescription;
-
-/// Area where details of the selected view are shown
-/// Users of the toolbar can attach a tap gesture recognizer to show additional details.
 @property (nonatomic, readonly) UIView *selectedViewDescriptionContainer;
-
-/// Installs the color editing action into the toolbar. This is intentionally
-/// exposed as a tiny integration point so the colorizer does not need to replace
-/// FLEX's normal toolbar action flow.
-- (void)installColorItem:(FLEXExplorerToolbarItem *)item;
 
 @end
 
