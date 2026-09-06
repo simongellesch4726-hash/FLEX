@@ -1,0 +1,9 @@
+Package: com.simongellesch4726.flexloader
+Name: FLEX Colorizer
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: FLEX explorer with UIView color editing
+Maintainer: simongellesch4726-hash
+Author: simongellesch4726-hash
+Section: Tweaks
+Depends: firmware (>= 15.0)
