@@ -15,8 +15,6 @@
 @interface FLEXColorEditorViewController ()
 @property (nonatomic, weak) UIView *targetView;
 @property (nonatomic) NSArray<FLEXColorTarget *> *targets;
-@property (nonatomic, strong) FLEXColorTarget *activeTarget;
-@property (nonatomic, strong) FLEXArgumentInputColorView *activePicker;
 @end
 
 @implementation FLEXColorEditorViewController
@@ -97,7 +95,11 @@
         addTarget(@"Background", @"background", ^UIColor *{ return textView.backgroundColor; }, ^(UIColor *color){ textView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UIImageView class]]) {
         UIImageView *imageView = (UIImageView *)view;
-        addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
+        if (imageView.image.renderingMode != UIImageRenderingModeAlwaysOriginal) {
+            addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
+        } else {
+            addTarget(@"Tint", @"tint", ^UIColor *{ return imageView.tintColor; }, ^(UIColor *color){ imageView.tintColor = color; });
+        }
         addTarget(@"Background", @"background", ^UIColor *{ return imageView.backgroundColor; }, ^(UIColor *color){ imageView.backgroundColor = color; });
     } else if ([view isKindOfClass:[UISwitch class]]) {
         UISwitch *control = (UISwitch *)view;
@@ -120,8 +122,6 @@
         [view isKindOfClass:[UISlider class]];
 
     if (!specialized) {
-        // Intentionally operate on the selected UIView only. Descendants are not
-        // traversed, so composite glyphs remain a single visual element.
         addTarget(@"Background", @"background", ^UIColor *{ return view.backgroundColor; }, ^(UIColor *color){ view.backgroundColor = color; });
         addTarget(@"Tint", @"tint", ^UIColor *{ return view.tintColor; }, ^(UIColor *color){ view.tintColor = color; });
     }
