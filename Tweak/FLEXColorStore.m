@@ -39,25 +39,42 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
     }
 
     for (UIView *candidate in ancestors) {
-        NSInteger siblingIndex = [candidate.superview.subviews indexOfObjectIdenticalTo:candidate];
-        NSString *accessibility = candidate.accessibilityIdentifier.length ? candidate.accessibilityIdentifier : @"-";
-        [components addObject:[NSString stringWithFormat:@"%@[%ld](%@)", NSStringFromClass(candidate.class), (long)siblingIndex, accessibility]];
+        NSInteger siblingIndex = candidate.superview
+            ? [candidate.superview.subviews indexOfObjectIdenticalTo:candidate]
+            : 0;
+        NSString *accessibility = candidate.accessibilityIdentifier.length
+            ? candidate.accessibilityIdentifier
+            : @"-";
+        [components addObject:[NSString stringWithFormat:@"%@[%ld](%@)",
+            NSStringFromClass(candidate.class), (long)siblingIndex, accessibility]];
     }
 
-    [components addObject:target ?: @"default"];
+    [components addObject:target.length ? target : @"default"];
     return [components componentsJoinedByString:@"/"];
 }
 
 - (void)setColor:(UIColor *)color forView:(UIView *)view target:(NSString *)target {
     if (!view || !color) return;
-    CGFloat r = 0, g = 0, b = 0, a = 0, w = 0;
-    BOOL rgb = [color getRed:&r green:&g blue:&b alpha:&a];
-    if (!rgb && [color getWhite:&w alpha:&a]) r = g = b = w;
-    if (!rgb && a == 0 && ![color getWhite:&w alpha:&a]) return;
+
+    UIColor *resolved = color;
+    if (@available(iOS 13.0, *)) {
+        resolved = [color resolvedColorWithTraitCollection:view.traitCollection];
+    }
+
+    CGFloat r = 0, g = 0, b = 0, a = 1, w = 0;
+    BOOL rgb = [resolved getRed:&r green:&g blue:&b alpha:&a];
+    if (!rgb) {
+        BOOL white = [resolved getWhite:&w alpha:&a];
+        if (!white) return;
+        r = g = b = w;
+    }
 
     NSString *identifier = [self identifierForView:view target:target];
     self.entries[identifier] = @{
-        @"r": @(r), @"g": @(g), @"b": @(b), @"a": @(a)
+        @"r": @(r),
+        @"g": @(g),
+        @"b": @(b),
+        @"a": @(a)
     };
     [[NSUserDefaults standardUserDefaults] setObject:self.entries forKey:kFLEXColorStoreDefaultsKey];
 }
@@ -65,10 +82,22 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
 - (UIColor *)colorForView:(UIView *)view target:(NSString *)target {
     NSDictionary *entry = self.entries[[self identifierForView:view target:target]];
     if (!entry) return nil;
-    return [UIColor colorWithRed:[entry[@"r"] doubleValue]
-                           green:[entry[@"g"] doubleValue]
-                            blue:[entry[@"b"] doubleValue]
-                           alpha:[entry[@"a"] doubleValue]];
+
+    NSNumber *r = entry[@"r"];
+    NSNumber *g = entry[@"g"];
+    NSNumber *b = entry[@"b"];
+    NSNumber *a = entry[@"a"];
+    if (![r isKindOfClass:NSNumber.class] ||
+        ![g isKindOfClass:NSNumber.class] ||
+        ![b isKindOfClass:NSNumber.class] ||
+        ![a isKindOfClass:NSNumber.class]) {
+        return nil;
+    }
+
+    return [UIColor colorWithRed:r.doubleValue
+                           green:g.doubleValue
+                            blue:b.doubleValue
+                           alpha:a.doubleValue];
 }
 
 - (void)resetColors {
