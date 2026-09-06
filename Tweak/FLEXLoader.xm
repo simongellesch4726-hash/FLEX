@@ -24,9 +24,27 @@
 
 @end
 
+static NSArray<UIWindow *> *FLEXApplicationWindows(void) {
+    NSMutableArray<UIWindow *> *windows = [NSMutableArray array];
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+            if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+            UIWindowScene *windowScene = (UIWindowScene *)scene;
+            if (windowScene.activationState == UISceneActivationStateUnattached) continue;
+            [windows addObjectsFromArray:windowScene.windows];
+        }
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        [windows addObjectsFromArray:UIApplication.sharedApplication.windows];
+#pragma clang diagnostic pop
+    }
+    return windows.copy;
+}
+
 static void FLEXApplyStoredColors(void) {
     FLEXColorStore *store = [FLEXColorStore sharedStore];
-    for (UIWindow *window in UIApplication.sharedApplication.windows) {
+    for (UIWindow *window in FLEXApplicationWindows()) {
         if ([NSStringFromClass(window.class) hasPrefix:@"FLEX"]) continue;
         [store applyStoredColorsToWindow:window];
     }
@@ -37,7 +55,7 @@ static void FLEXApplyStoredColors(void) {
         static BOOL observerInstalled = NO;
         FLEXGestureTarget *target = FLEXGestureTarget.sharedTarget;
         void (^install)(void) = ^{
-            for (UIWindow *window in UIApplication.sharedApplication.windows) {
+            for (UIWindow *window in FLEXApplicationWindows()) {
                 if ([NSStringFromClass(window.class) hasPrefix:@"FLEX"]) continue;
                 BOOL exists = NO;
                 for (UIGestureRecognizer *recognizer in window.gestureRecognizers) {
@@ -60,7 +78,6 @@ static void FLEXApplyStoredColors(void) {
         };
 
         install();
-        FLEXApplyStoredColors();
 
         if (!observerInstalled) {
             observerInstalled = YES;
