@@ -63,6 +63,17 @@ jobs:
       - name: Build FLEX Loader tweak package
         working-directory: Tweak
         run: make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+      - name: Verify package payload and dylib
+        working-directory: Tweak
+        run: |
+          test -f .theos/obj/FLEXLoader.dylib
+          test -n "$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
+          lipo -info .theos/obj/FLEXLoader.dylib
+          dpkg-deb -I "$(find packages -maxdepth 1 -name '*.deb' -print -quit)" | tee package-control.txt
+          dpkg-deb -c "$(find packages -maxdepth 1 -name '*.deb' -print -quit)" | tee package-contents.txt
+          grep -q "com.simongellesch4726.flexloader" package-control.txt
+          grep -q "FLEXLoader.dylib" package-contents.txt
+          ! grep -q "Settings" package-contents.txt
       - name: Collect injectable FLEX Loader dylib
         run: |
           mkdir -p Tweak/artifacts
