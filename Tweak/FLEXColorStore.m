@@ -33,13 +33,11 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
     for (UIView *candidate = view; candidate; candidate = candidate.superview) {
         [ancestors insertObject:candidate atIndex:0];
     }
-
     for (UIView *candidate in ancestors) {
         NSInteger siblingIndex = candidate.superview ? [candidate.superview.subviews indexOfObjectIdenticalTo:candidate] : 0;
         NSString *accessibility = candidate.accessibilityIdentifier.length ? candidate.accessibilityIdentifier : @"-";
         [components addObject:[NSString stringWithFormat:@"%@[%ld](%@)", NSStringFromClass(candidate.class), (long)siblingIndex, accessibility]];
     }
-
     [components addObject:target.length ? target : @"default"];
     return [components componentsJoinedByString:@"/"];
 }
@@ -47,7 +45,6 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
 - (UIColor *)staticColorFromColor:(UIColor *)color forView:(UIView *)view {
     if (!color || !view) return nil;
     if (@available(iOS 13.0, *)) color = [color resolvedColorWithTraitCollection:view.traitCollection];
-
     CGFloat r = 0, g = 0, b = 0, a = 1, w = 0;
     if ([color getRed:&r green:&g blue:&b alpha:&a]) return [UIColor colorWithRed:r green:g blue:b alpha:a];
     if ([color getWhite:&w alpha:&a]) return [UIColor colorWithWhite:w alpha:a];
@@ -55,27 +52,25 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
 }
 
 - (void)setColor:(UIColor *)color forView:(UIView *)view target:(NSString *)target {
+    if (!view) return;
     UIColor *resolved = [self staticColorFromColor:color forView:view];
     if (!resolved) return;
-
     CGFloat r = 0, g = 0, b = 0, a = 1;
     [resolved getRed:&r green:&g blue:&b alpha:&a];
-    NSString *identifier = [self identifierForView:view target:target];
-    self.entries[identifier] = @{@"r": @(r), @"g": @(g), @"b": @(b), @"a": @(a)};
+    self.entries[[self identifierForView:view target:target]] = @{@"r":@(r), @"g":@(g), @"b":@(b), @"a":@(a)};
     [[NSUserDefaults standardUserDefaults] setObject:self.entries forKey:kFLEXColorStoreDefaultsKey];
 }
 
 - (UIColor *)colorForView:(UIView *)view target:(NSString *)target {
+    if (!view) return nil;
     NSDictionary *entry = self.entries[[self identifierForView:view target:target]];
     NSNumber *r = entry[@"r"], *g = entry[@"g"], *b = entry[@"b"], *a = entry[@"a"];
-    if (![r isKindOfClass:NSNumber.class] || ![g isKindOfClass:NSNumber.class] ||
-        ![b isKindOfClass:NSNumber.class] || ![a isKindOfClass:NSNumber.class]) return nil;
+    if (![r isKindOfClass:NSNumber.class] || ![g isKindOfClass:NSNumber.class] || ![b isKindOfClass:NSNumber.class] || ![a isKindOfClass:NSNumber.class]) return nil;
     return [UIColor colorWithRed:r.doubleValue green:g.doubleValue blue:b.doubleValue alpha:a.doubleValue];
 }
 
 - (void)applyStoredColorsToView:(UIView *)view {
     if (!view) return;
-
     UIColor *background = [self colorForView:view target:@"background"];
     if (background) view.backgroundColor = background;
     UIColor *tint = [self colorForView:view target:@"tint"];
@@ -85,13 +80,11 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
         UIColor *text = [self colorForView:view target:@"text"];
         if (text) ((UILabel *)view).textColor = text;
     } else if ([view isKindOfClass:[UITextField class]]) {
-        UITextField *field = (UITextField *)view;
         UIColor *text = [self colorForView:view target:@"text"];
-        if (text) field.textColor = text;
+        if (text) ((UITextField *)view).textColor = text;
     } else if ([view isKindOfClass:[UITextView class]]) {
-        UITextView *textView = (UITextView *)view;
         UIColor *text = [self colorForView:view target:@"text"];
-        if (text) textView.textColor = text;
+        if (text) ((UITextView *)view).textColor = text;
     } else if ([view isKindOfClass:[UISwitch class]]) {
         UISwitch *control = (UISwitch *)view;
         UIColor *onTint = [self colorForView:view target:@"onTint"];
@@ -111,8 +104,7 @@ static NSString * const kFLEXColorStoreDefaultsKey = @"FLEXColorizerColors";
         UIControlState states[] = { UIControlStateNormal, UIControlStateHighlighted, UIControlStateSelected, UIControlStateDisabled };
         for (NSUInteger i = 0; i < sizeof(states) / sizeof(states[0]); i++) {
             UIControlState state = states[i];
-            NSString *key = [NSString stringWithFormat:@"title.%lu", (unsigned long)state];
-            UIColor *titleColor = [self colorForView:view target:key];
+            UIColor *titleColor = [self colorForView:view target:[NSString stringWithFormat:@"title.%lu", (unsigned long)state]];
             if (titleColor) [button setTitleColor:titleColor forState:state];
         }
     }
