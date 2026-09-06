@@ -45,12 +45,17 @@ static const void *FLEXColorItemKey = &FLEXColorItemKey;
 
     UIImage *image = nil;
     if (@available(iOS 13.0, *)) image = [UIImage systemImageNamed:@"paintpalette.fill"];
-    if (!image) image = [UIImage systemImageNamed:@"paintbrush.fill"];
 
     FLEXExplorerToolbarItem *item = [FLEXExplorerToolbarItem itemWithTitle:@"color" image:image];
     item.enabled = NO;
     [item addTarget:self action:@selector(flex_colorButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [toolbar flex_setColorItem:item];
+
+    NSMutableArray<FLEXExplorerToolbarItem *> *items = [toolbar.toolbarItems mutableCopy];
+    if (![items containsObject:item]) {
+        [items insertObject:item atIndex:MIN((NSUInteger)3, items.count)];
+        toolbar.toolbarItems = items;
+    }
 }
 
 - (void)flex_updateButtonStates_colorizer {
