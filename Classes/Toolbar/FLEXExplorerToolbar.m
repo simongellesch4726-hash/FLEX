@@ -90,7 +90,6 @@
         }
 
         // Selected view box //
-        
         if (@available(iOS 26, *)) {
             UIGlassEffect *descGlassEffect = [[UIGlassEffect alloc] init];
             self.descriptionGlassView = [[UIVisualEffectView alloc] initWithEffect:descGlassEffect];
@@ -247,7 +246,6 @@
 
 - (void)installColorItem:(FLEXExplorerToolbarItem *)item {
     if (!item || self.colorItem == item) return;
-
     self.colorItem = item;
     NSMutableArray<FLEXExplorerToolbarItem *> *items = [self.toolbarItems mutableCopy] ?: [NSMutableArray array];
     [items removeObject:item];
@@ -274,62 +272,26 @@
 
 #pragma mark - Sizing Convenience Methods
 
-+ (UIFont *)descriptionLabelFont {
-    return [UIFont systemFontOfSize:12.0];
-}
-
-+ (CGFloat)toolbarItemHeight {
-    return 44.0;
-}
-
-+ (CGFloat)glassVerticalPadding {
-    return 6.0;
-}
-
-+ (CGFloat)glassHorizontalInset {
-    return 4.0;
-}
-
-+ (CGFloat)dragHandleWidth {
-    return FLEXResources.dragHandle.size.width;
-}
-
-+ (CGFloat)descriptionLabelHeight {
-    return ceil([[self descriptionLabelFont] lineHeight]);
-}
-
-+ (CGFloat)descriptionVerticalPadding {
-    return 2.0;
-}
-
-+ (CGFloat)descriptionContainerHeight {
-    return [self descriptionVerticalPadding] * 2.0 + [self descriptionLabelHeight];
-}
-
-+ (CGFloat)selectedViewColorIndicatorDiameter {
-    return ceil([self descriptionLabelHeight] / 2.0);
-}
-
-+ (CGFloat)horizontalPadding {
-    return 11.0;
-}
++ (UIFont *)descriptionLabelFont { return [UIFont systemFontOfSize:12.0]; }
++ (CGFloat)toolbarItemHeight { return 44.0; }
++ (CGFloat)glassVerticalPadding { return 6.0; }
++ (CGFloat)glassHorizontalInset { return 4.0; }
++ (CGFloat)dragHandleWidth { return FLEXResources.dragHandle.size.width; }
++ (CGFloat)descriptionLabelHeight { return ceil([[self descriptionLabelFont] lineHeight]); }
++ (CGFloat)descriptionVerticalPadding { return 2.0; }
++ (CGFloat)descriptionContainerHeight { return [self descriptionVerticalPadding] * 2.0 + [self descriptionLabelHeight]; }
++ (CGFloat)selectedViewColorIndicatorDiameter { return ceil([self descriptionLabelHeight] / 2.0); }
++ (CGFloat)horizontalPadding { return 11.0; }
 
 - (CGSize)sizeThatFits:(CGSize)size {
-    CGFloat height = 0.0;
-    height += [[self class] toolbarItemHeight];
-    height += [[self class] descriptionContainerHeight];
-    if (@available(iOS 26, *)) {
-        height += [[self class] glassVerticalPadding] * 2;
-    }
+    CGFloat height = [[self class] toolbarItemHeight] + [[self class] descriptionContainerHeight];
+    if (@available(iOS 26, *)) height += [[self class] glassVerticalPadding] * 2;
     return CGSizeMake(size.width, height);
 }
 
 - (CGRect)safeArea {
     CGRect safeArea = self.bounds;
-    if (@available(iOS 11.0, *)) {
-        safeArea = UIEdgeInsetsInsetRect(self.bounds, self.safeAreaInsets);
-    }
-
+    if (@available(iOS 11.0, *)) safeArea = UIEdgeInsetsInsetRect(self.bounds, self.safeAreaInsets);
     return safeArea;
 }
 
